@@ -246,6 +246,20 @@ def add_servico():
     except Exception as e:
         return jsonify({"erro": str(e)}), 400
 
+@app.route('/servico/<int:id>', methods=['DELETE'])
+@token_required # Rota Protegida
+def delete_servico(id):
+    """ DELETE: Remove apenas um serviço específico """
+    servico = Servico.query.get(id)
+    if not servico: return jsonify({'message': 'Não encontrado!'}), 404
+    
+    try:
+        db.session.delete(servico)
+        db.session.commit()
+        return jsonify({'message': f'Serviço {id} removido com sucesso!'})
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 400
+
 @app.route('/categoria', methods=['POST'])
 def add_categoria():
     """ Adiciona nova categoria """
@@ -264,6 +278,24 @@ def get_categorias():
     todas = Categoria.query.all()
     result = [{"id_categoria": c.id_categoria, "nome_categoria": c.nome_categoria} for c in todas]
     return jsonify(result)
+
+@app.route('/categoria/<int:id>', methods=['DELETE'])
+@token_required # Rota Protegida
+def delete_categoria(id):
+    """ DELETE: Remove categoria (se não houver prestadores vinculados) """
+    categoria = Categoria.query.get(id)
+    if not categoria: return jsonify({'message': 'Não encontrada!'}), 404
+
+    # Verifica integridade antes de deletar
+    if categoria.prestadores:
+        return jsonify({'erro': 'Não é possível deletar! Existem prestadores nesta categoria.'}), 400
+
+    try:
+        db.session.delete(categoria)
+        db.session.commit()
+        return jsonify({'message': f'Categoria {id} deletada com sucesso!'})
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 400
 
 # SEÇÃO 6: EXECUÇÃO
 
